@@ -100,6 +100,23 @@ export function CarouselPreview({
     }
   }, [])
 
+  /** Temporarily remove the scale transform so html-to-image captures at full 540px */
+  const resetScaleForExport = useCallback(() => {
+    const el = visibleSlideRef.current
+    if (!el) return () => {}
+    const prev = { transform: el.style.transform, transformOrigin: el.style.transformOrigin }
+    const parent = el.parentElement
+    const prevParentH = parent?.style.height ?? ""
+    el.style.transform = ""
+    el.style.transformOrigin = ""
+    if (parent) parent.style.height = ""
+    return () => {
+      el.style.transform = prev.transform
+      el.style.transformOrigin = prev.transformOrigin
+      if (parent) parent.style.height = prevParentH
+    }
+  }, [])
+
   const exportToPdf = useCallback(async () => {
     setIsExporting(true)
     const previousIndex = activeSlideIndexRef.current
@@ -140,11 +157,17 @@ export function CarouselPreview({
         }
         await waitForImages(visibleSlideRef.current)
 
+        const restoreScale = resetScaleForExport()
+        await new Promise<void>((r) => requestAnimationFrame(() => r()))
         const imageData = await toPng(visibleSlideRef.current, {
           cacheBust: true,
           pixelRatio: 2,
           backgroundColor: undefined,
+          width: SLIDE_SIZE,
+          height: SLIDE_SIZE,
         })
+        restoreScale()
+
         if (i > 0) {
           pdf.addPage([pdfSize, pdfSize], "landscape")
         }
@@ -159,7 +182,15 @@ export function CarouselPreview({
         await waitForSlideIndex(0)
         await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
         if (visibleSlideRef.current) {
-          const thumb = await toPng(visibleSlideRef.current, { cacheBust: true, pixelRatio: 0.5 })
+          const restoreScale = resetScaleForExport()
+          await new Promise<void>((r) => requestAnimationFrame(() => r()))
+          const thumb = await toPng(visibleSlideRef.current, {
+            cacheBust: true,
+            pixelRatio: 0.5,
+            width: SLIDE_SIZE,
+            height: SLIDE_SIZE,
+          })
+          restoreScale()
           onExportComplete(thumb, slides[0]?.title || "Untitled")
         }
       }
@@ -169,10 +200,10 @@ export function CarouselPreview({
       onSetActiveSlide(previousIndex)
       setIsExporting(false)
     }
-  }, [onSetActiveSlide, onExportComplete, slides, waitForFonts, waitForImages, waitForSlideIndex])
+  }, [onSetActiveSlide, onExportComplete, slides, waitForFonts, waitForImages, waitForSlideIndex, resetScaleForExport])
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex w-full flex-col items-center gap-6">
       {/* Slide preview area */}
       <div ref={containerRef} className="relative w-full max-w-[540px]">
         {/* Navigation */}
@@ -215,19 +246,17 @@ export function CarouselPreview({
           </Button>
         </div>
 
-        {/* Visible preview — scales down on narrow viewports */}
+        {/* Visible preview — always scales to fit container */}
         <div
           className="overflow-hidden rounded-xl shadow-xl ring-1 ring-border"
-          style={{
-            height: scale < 1 ? SLIDE_SIZE * scale : undefined,
-          }}
+          style={{ height: SLIDE_SIZE * scale }}
         >
           <div
             ref={visibleSlideRef}
             className="overflow-hidden"
             style={{
               transformOrigin: "top left",
-              transform: scale < 1 ? `scale(${scale})` : undefined,
+              transform: `scale(${scale})`,
             }}
           >
             <SlidePreview
