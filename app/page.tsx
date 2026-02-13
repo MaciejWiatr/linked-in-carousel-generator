@@ -12,6 +12,7 @@ import { ExportHistory, loadHistory, saveToHistory, clearHistory, type ExportRec
 import { Button } from "@/components/ui/button"
 import { DEFAULT_THEMES } from "@/lib/types"
 import type { SlideData, AuthorInfo, CarouselTheme } from "@/lib/types"
+import { useIsMobile } from "@/hooks/use-mobile"
 import {
   FileText,
   LayoutList,
@@ -22,6 +23,7 @@ import {
   User,
   Layers,
   Sliders,
+  Eye,
 } from "lucide-react"
 
 function generateId() {
@@ -117,6 +119,8 @@ export default function Page() {
   const [activeSlideIndex, setActiveSlideIndex] = useState(0)
   const [editorMode, setEditorMode] = useState<"slides" | "markdown">("slides")
   const [exportHistory, setExportHistory] = useState<ExportRecord[]>([])
+  const [mobileTab, setMobileTab] = useState<"slides" | "preview" | "design">("preview")
+  const isMobile = useIsMobile()
 
   // Hydrate from localStorage on mount
   useEffect(() => {
@@ -207,6 +211,158 @@ export default function Page() {
     setExportHistory([])
   }, [])
 
+  /* ── Shared panel content ── */
+  const slidesPanel = (
+    <div className="flex flex-1 flex-col overflow-hidden bg-card">
+      <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+        <div className="flex items-center gap-1.5">
+          <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-xs font-semibold text-foreground">Slides</span>
+        </div>
+        <div className="flex items-center rounded-md border border-border bg-muted/50 p-0.5">
+          <Button
+            variant={editorMode === "slides" ? "default" : "ghost"}
+            size="sm"
+            className="h-6 gap-1 px-2 text-[10px]"
+            onClick={() => setEditorMode("slides")}
+          >
+            <LayoutList className="h-3 w-3" />
+            Cards
+          </Button>
+          <Button
+            variant={editorMode === "markdown" ? "default" : "ghost"}
+            size="sm"
+            className="h-6 gap-1 px-2 text-[10px]"
+            onClick={() => setEditorMode("markdown")}
+          >
+            <FileCode2 className="h-3 w-3" />
+            Markdown
+          </Button>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto p-3">
+        {editorMode === "slides" ? (
+          <SlideEditor
+            slides={slides}
+            activeSlideIndex={activeSlideIndex}
+            onUpdateSlide={handleUpdateSlide}
+            onRemoveSlide={handleRemoveSlide}
+            onAddSlide={handleAddSlide}
+            onDuplicateSlide={handleDuplicateSlide}
+            onSetActiveSlide={setActiveSlideIndex}
+          />
+        ) : (
+          <MarkdownEditor
+            slides={slides}
+            onSlidesChange={setSlides}
+            onSetActiveSlide={setActiveSlideIndex}
+          />
+        )}
+      </div>
+    </div>
+  )
+
+  const previewPanel = (
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 items-center justify-center overflow-auto bg-muted/40 canvas-bg">
+        <div className="p-4 md:p-8 w-full flex justify-center">
+          <CarouselPreview
+            slides={slides}
+            author={author}
+            theme={theme}
+            activeSlideIndex={activeSlideIndex}
+            onSetActiveSlide={setActiveSlideIndex}
+            onExportComplete={handleExportComplete}
+          />
+        </div>
+      </div>
+      <ExportHistory history={exportHistory} onClear={handleClearHistory} />
+    </div>
+  )
+
+  const designPanel = (
+    <div className="flex flex-1 flex-col overflow-hidden bg-card">
+      <div className="flex items-center gap-1.5 border-b border-border px-4 py-2.5">
+        <Palette className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="text-xs font-semibold text-foreground">Design</span>
+      </div>
+      <div className="flex-1 overflow-y-auto">
+        <PropertySection icon={Palette} title="Theme">
+          <ThemePicker activeTheme={theme} onSelectTheme={setTheme} />
+        </PropertySection>
+        <PropertySection icon={Sliders} title="Customize">
+          <ThemeCustomizer theme={theme} onThemeChange={setTheme} />
+        </PropertySection>
+        <PropertySection icon={Type} title="Font">
+          <FontPicker activeFont={theme.fontStyle} onSelectFont={handleFontChange} />
+        </PropertySection>
+        <PropertySection icon={User} title="Author">
+          <AuthorPanel author={author} onUpdateAuthor={handleUpdateAuthor} />
+        </PropertySection>
+      </div>
+    </div>
+  )
+
+  if (isMobile) {
+    return (
+      <div className="flex h-[100dvh] flex-col overflow-hidden bg-background">
+        {/* ── Mobile header ── */}
+        <header className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-card px-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">
+              <FileText className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <span className="text-sm font-semibold text-foreground">Carousel Generator</span>
+          </div>
+        </header>
+
+        {/* ── Mobile content ── */}
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {mobileTab === "slides" && slidesPanel}
+          {mobileTab === "preview" && previewPanel}
+          {mobileTab === "design" && designPanel}
+        </div>
+
+        {/* ── Mobile tab bar ── */}
+        <nav className="flex h-14 shrink-0 items-center justify-around border-t border-border bg-card">
+          <button
+            onClick={() => setMobileTab("slides")}
+            className={`flex flex-1 flex-col items-center gap-0.5 py-1.5 text-[10px] font-medium transition-colors ${
+              mobileTab === "slides"
+                ? "text-primary"
+                : "text-muted-foreground"
+            }`}
+          >
+            <Layers className="h-5 w-5" />
+            Slides
+          </button>
+          <button
+            onClick={() => setMobileTab("preview")}
+            className={`flex flex-1 flex-col items-center gap-0.5 py-1.5 text-[10px] font-medium transition-colors ${
+              mobileTab === "preview"
+                ? "text-primary"
+                : "text-muted-foreground"
+            }`}
+          >
+            <Eye className="h-5 w-5" />
+            Preview
+          </button>
+          <button
+            onClick={() => setMobileTab("design")}
+            className={`flex flex-1 flex-col items-center gap-0.5 py-1.5 text-[10px] font-medium transition-colors ${
+              mobileTab === "design"
+                ? "text-primary"
+                : "text-muted-foreground"
+            }`}
+          >
+            <Palette className="h-5 w-5" />
+            Design
+          </button>
+        </nav>
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       {/* ── Toolbar ── */}
@@ -233,96 +389,16 @@ export default function Page() {
       {/* ── Three-column layout ── */}
       <div className="flex flex-1 overflow-hidden">
         {/* ── Left panel: Slides ── */}
-        <div className="flex w-[360px] shrink-0 flex-col border-r border-border bg-card">
-          <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-            <div className="flex items-center gap-1.5">
-              <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs font-semibold text-foreground">
-                Slides
-              </span>
-            </div>
-            <div className="flex items-center rounded-md border border-border bg-muted/50 p-0.5">
-              <Button
-                variant={editorMode === "slides" ? "default" : "ghost"}
-                size="sm"
-                className="h-6 gap-1 px-2 text-[10px]"
-                onClick={() => setEditorMode("slides")}
-              >
-                <LayoutList className="h-3 w-3" />
-                Cards
-              </Button>
-              <Button
-                variant={editorMode === "markdown" ? "default" : "ghost"}
-                size="sm"
-                className="h-6 gap-1 px-2 text-[10px]"
-                onClick={() => setEditorMode("markdown")}
-              >
-                <FileCode2 className="h-3 w-3" />
-                Markdown
-              </Button>
-            </div>
-          </div>
-          <div className="flex-1 overflow-y-auto p-3">
-            {editorMode === "slides" ? (
-              <SlideEditor
-                slides={slides}
-                activeSlideIndex={activeSlideIndex}
-                onUpdateSlide={handleUpdateSlide}
-                onRemoveSlide={handleRemoveSlide}
-                onAddSlide={handleAddSlide}
-                onDuplicateSlide={handleDuplicateSlide}
-                onSetActiveSlide={setActiveSlideIndex}
-              />
-            ) : (
-              <MarkdownEditor
-                slides={slides}
-                onSlidesChange={setSlides}
-                onSetActiveSlide={setActiveSlideIndex}
-              />
-            )}
-          </div>
+        <div className="flex w-[360px] shrink-0 flex-col border-r border-border">
+          {slidesPanel}
         </div>
 
         {/* ── Center: Canvas ── */}
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <div className="flex flex-1 items-center justify-center overflow-auto bg-muted/40 canvas-bg">
-            <div className="p-8">
-              <CarouselPreview
-                slides={slides}
-                author={author}
-                theme={theme}
-                activeSlideIndex={activeSlideIndex}
-                onSetActiveSlide={setActiveSlideIndex}
-                onExportComplete={handleExportComplete}
-              />
-            </div>
-          </div>
-          <ExportHistory history={exportHistory} onClear={handleClearHistory} />
-        </div>
+        {previewPanel}
 
         {/* ── Right panel: Design ── */}
-        <div className="flex w-[280px] shrink-0 flex-col border-l border-border bg-card">
-          <div className="flex items-center gap-1.5 border-b border-border px-4 py-2.5">
-            <Palette className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs font-semibold text-foreground">Design</span>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            <PropertySection icon={Palette} title="Theme">
-              <ThemePicker activeTheme={theme} onSelectTheme={setTheme} />
-            </PropertySection>
-
-            <PropertySection icon={Sliders} title="Customize">
-              <ThemeCustomizer theme={theme} onThemeChange={setTheme} />
-            </PropertySection>
-
-            <PropertySection icon={Type} title="Font">
-              <FontPicker activeFont={theme.fontStyle} onSelectFont={handleFontChange} />
-            </PropertySection>
-
-            <PropertySection icon={User} title="Author">
-              <AuthorPanel author={author} onUpdateAuthor={handleUpdateAuthor} />
-            </PropertySection>
-          </div>
+        <div className="flex w-[280px] shrink-0 flex-col border-l border-border">
+          {designPanel}
         </div>
       </div>
     </div>

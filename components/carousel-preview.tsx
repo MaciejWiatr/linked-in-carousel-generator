@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, Download, Loader2 } from "lucide-react"
 import type { SlideData, AuthorInfo, CarouselTheme } from "@/lib/types"
 
+const SLIDE_SIZE = 540
+
 interface CarouselPreviewProps {
   slides: SlideData[]
   author: AuthorInfo
@@ -25,11 +27,26 @@ export function CarouselPreview({
 }: CarouselPreviewProps) {
   const [isExporting, setIsExporting] = useState(false)
   const visibleSlideRef = useRef<HTMLDivElement | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
   const activeSlideIndexRef = useRef(activeSlideIndex)
+  const [scale, setScale] = useState(1)
 
   useEffect(() => {
     activeSlideIndexRef.current = activeSlideIndex
   }, [activeSlideIndex])
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const width = entry.contentRect.width
+        setScale(width < SLIDE_SIZE ? width / SLIDE_SIZE : 1)
+      }
+    })
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [])
 
   const goToPrev = () => {
     if (activeSlideIndex > 0) {
@@ -157,7 +174,7 @@ export function CarouselPreview({
   return (
     <div className="flex flex-col items-center gap-6">
       {/* Slide preview area */}
-      <div className="relative w-full max-w-[540px]">
+      <div ref={containerRef} className="relative w-full max-w-[540px]">
         {/* Navigation */}
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -198,9 +215,21 @@ export function CarouselPreview({
           </Button>
         </div>
 
-        {/* Visible preview */}
-        <div className="overflow-hidden rounded-xl shadow-xl ring-1 ring-border">
-          <div ref={visibleSlideRef} className="overflow-hidden">
+        {/* Visible preview — scales down on narrow viewports */}
+        <div
+          className="overflow-hidden rounded-xl shadow-xl ring-1 ring-border"
+          style={{
+            height: scale < 1 ? SLIDE_SIZE * scale : undefined,
+          }}
+        >
+          <div
+            ref={visibleSlideRef}
+            className="overflow-hidden"
+            style={{
+              transformOrigin: "top left",
+              transform: scale < 1 ? `scale(${scale})` : undefined,
+            }}
+          >
             <SlidePreview
               slide={slides[activeSlideIndex]}
               author={author}
