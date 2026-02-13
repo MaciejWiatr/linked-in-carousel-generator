@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Geist } from 'next/font/google'
+import { GeistPixelSquare } from 'geist/font/pixel'
 import { Analytics } from '@vercel/analytics/react'
+
 
 import './globals.css'
 
@@ -26,7 +28,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className={`${geist.variable} font-sans antialiased`}>
+      <body className={`${geist.variable} ${GeistPixelSquare.variable} font-sans antialiased`}>
         {children}
         <Analytics />
       </body>

@@ -27,7 +27,7 @@ export interface CarouselTheme {
   tagColor: string
   // extended style props
   layout: LayoutVariant
-  fontStyle: "inter" | "geist" | "poppins" | "montserrat" | "google-sans"
+  fontStyle: "inter" | "geist" | "poppins" | "montserrat" | "google-sans" | "geist-pixel"
   backgroundGradient?: string
   pattern?: "dots" | "grid" | "diagonal" | "circles" | "none"
   borderStyle?: "none" | "accent-top" | "accent-left" | "accent-bottom" | "full-border"
@@ -59,6 +59,22 @@ export const DEFAULT_THEMES: ThemeEntry[] = [
       pattern: "none",
       borderStyle: "none",
       titleSize: "xl",
+      slideNumberStyle: "minimal-dash",
+    },
+  },
+  {
+    name: "Pixel Retro",
+    category: "Special",
+    theme: {
+      backgroundColor: "#000000",
+      textColor: "#00ff00",
+      accentColor: "#00ff00",
+      tagColor: "#111111",
+      layout: "minimal",
+      fontStyle: "geist-pixel",
+      pattern: "grid",
+      borderStyle: "full-border",
+      titleSize: "lg",
       slideNumberStyle: "minimal-dash",
     },
   },

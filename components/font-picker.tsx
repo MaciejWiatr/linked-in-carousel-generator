@@ -18,6 +18,7 @@ const FONT_OPTIONS: {
   { id: "poppins", label: "Poppins", fontFamily: "'Poppins', sans-serif" },
   { id: "montserrat", label: "Montserrat", fontFamily: "'Montserrat', sans-serif" },
   { id: "google-sans", label: "Google Sans", fontFamily: "'Google Sans Flex', 'Google Sans', sans-serif" },
+  { id: "geist-pixel", label: "Geist Pixel", fontFamily: "var(--font-geist-pixel-square)" },
 ]
 
 export function FontPicker({ activeFont, onSelectFont }: FontPickerProps) {

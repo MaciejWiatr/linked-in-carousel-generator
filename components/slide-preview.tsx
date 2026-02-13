@@ -50,6 +50,8 @@ function getFontFamily(fontStyle: CarouselTheme["fontStyle"]) {
       return "'Montserrat', 'Inter', system-ui, sans-serif"
     case "google-sans":
       return "'Google Sans Flex', 'Google Sans', 'Product Sans', 'Inter', system-ui, sans-serif"
+    case "geist-pixel":
+      return "var(--font-geist-pixel-square), 'Geist Mono', monospace"
     default:
       return "'Inter', 'Segoe UI', system-ui, sans-serif"
   }
