@@ -265,7 +265,7 @@ export default function Page() {
   const previewPanel = (
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="flex-1 overflow-auto bg-muted/40 canvas-bg">
-        <div className="flex min-h-full w-full items-center justify-center p-4 md:p-8">
+        <div className="flex min-h-full w-full items-center justify-center px-0 py-2 sm:p-4 md:p-8">
           <CarouselPreview
             slides={slides}
             author={author}
