@@ -276,7 +276,9 @@ export default function Page() {
           />
         </div>
       </div>
-      <ExportHistory history={exportHistory} onClear={handleClearHistory} />
+      {!isMobile && (
+        <ExportHistory history={exportHistory} onClear={handleClearHistory} />
+      )}
     </div>
   )
 
